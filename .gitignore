@@ -1,0 +1,19 @@
+# Operating-system and editor residue
+.DS_Store
+.idea/
+.vscode/
+
+# Generated site output and local dependencies
+node_modules/
+dist/
+.astro/
+
+# Private planning and technical platform research
+PLATFORM_OPTIONS.md
+works_in_progress/PLATFORM_OPTIONS.md
+
+# Do not publish unrelated working formats or source archives by accident
+*.docx
+*.pdf
+*.zip
+*.sqlite*
