@@ -17,3 +17,6 @@ works_in_progress/PLATFORM_OPTIONS.md
 *.pdf
 *.zip
 *.sqlite*
+
+# Local reminder for the intentionally release-triggered evidence policy
+PUBLISHING_WORKFLOW.local.md

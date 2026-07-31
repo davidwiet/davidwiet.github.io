@@ -1,0 +1,45 @@
+name: Preserve Public Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out released version
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Create exact public-source archive
+        run: |
+          mkdir -p evidence
+          git archive --format=tar.gz --prefix=works-in-progress-${{ github.event.release.tag_name }}/ HEAD works_in_progress > evidence/works-in-progress.tar.gz
+          sha512sum evidence/works-in-progress.tar.gz > evidence/works-in-progress.tar.gz.sha512
+
+      - name: Request and verify RFC 3161 timestamp
+        run: |
+          openssl ts -query -data evidence/works-in-progress.tar.gz -no_nonce -sha512 -cert -out evidence/freetsa-request.tsq
+          curl --fail --retry 3 --retry-delay 5 \
+            -H 'Content-Type: application/timestamp-query' \
+            --data-binary '@evidence/freetsa-request.tsq' \
+            https://freetsa.org/tsr \
+            --output evidence/freetsa-response.tsr
+          curl --fail --retry 3 --retry-delay 5 https://freetsa.org/files/tsa.crt --output evidence/freetsa-tsa.crt
+          curl --fail --retry 3 --retry-delay 5 https://freetsa.org/files/cacert.pem --output evidence/freetsa-ca.pem
+          openssl ts -verify \
+            -in evidence/freetsa-response.tsr \
+            -queryfile evidence/freetsa-request.tsq \
+            -CAfile evidence/freetsa-ca.pem \
+            -untrusted evidence/freetsa-tsa.crt
+          openssl ts -reply -in evidence/freetsa-response.tsr -text > evidence/freetsa-response.txt
+
+      - name: Attach public evidence to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" evidence/* --clobber
