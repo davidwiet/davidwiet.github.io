@@ -20,7 +20,8 @@ jobs:
         run: |
           mkdir -p evidence
           git archive --format=tar.gz --prefix=works-in-progress-${{ github.event.release.tag_name }}/ HEAD works_in_progress > evidence/works-in-progress.tar.gz
-          sha512sum evidence/works-in-progress.tar.gz > evidence/works-in-progress.tar.gz.sha512
+          cd evidence
+          sha512sum works-in-progress.tar.gz > works-in-progress.tar.gz.sha512
 
       - name: Request and verify RFC 3161 timestamp
         run: |
