@@ -1,12 +1,13 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PublicationEvidence from '../../components/PublicationEvidence.astro';
+import evidence from '../../data/evidence.json';
 import Article from '../../../works_in_progress/The_Better_Lesson_Sutton_and_Its_Reception/current.md';
 ---
 
 <BaseLayout title="The Better Lesson: Sutton and Its Reception — David Wietchner">
   <p class="eyebrow">DRAFT</p>
   <h1>The Better Lesson: Sutton and Its Reception</h1>
-  <PublicationEvidence firstPublicDate="31 July 2026" releaseUrl="https://github.com/davidwiet/davidwiet.github.io/releases/tag/initial-public-release-2026-07-31" revisionUrl="https://github.com/davidwiet/davidwiet.github.io/commits/main/works_in_progress/The_Better_Lesson_Sutton_and_Its_Reception/current.md" />
+  <PublicationEvidence {...evidence.The_Better_Lesson_Sutton_and_Its_Reception} revisionUrl="https://github.com/davidwiet/davidwiet.github.io/commits/main/works_in_progress/The_Better_Lesson_Sutton_and_Its_Reception/current.md" />
   <Article />
 </BaseLayout>
