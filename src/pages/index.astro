@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { works } from '../data/works';
+---
+
+<BaseLayout title="David Wietchner — Works in Progress">
+  <p class="eyebrow">PUBLIC DRAFTS · VERSIONED IN GIT</p>
+  <h1>Works in Progress</h1>
+  <p>Drafts and working papers. The repository records their public version history; this site is the reading edition.</p>
+  <ul class="work-list">
+    {works.map((work) => (
+      <li>
+        <a href={`/works/${work.slug}/`}>{work.title}</a>
+        <div class="metadata">{work.status}</div>
+      </li>
+    ))}
+  </ul>
+  <p class="metadata"><a href="https://github.com/davidwiet/davidwiet.github.io">Browse the public source and revision history on GitHub.</a></p>
+</BaseLayout>
