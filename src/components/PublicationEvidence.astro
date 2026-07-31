@@ -1,0 +1,19 @@
+---
+interface Props {
+  firstPublicDate: string;
+  releaseUrl: string;
+  revisionUrl: string;
+}
+
+const { firstPublicDate, releaseUrl, revisionUrl } = Astro.props;
+---
+
+<div class="metadata">
+  First public version:
+  <a href={releaseUrl} title="Open timestamped release evidence">{firstPublicDate}</a>
+  <a class="timestamp-mark" href={releaseUrl} title="Open timestamped release evidence" aria-label="Open timestamped release evidence">
+    <img src="/freetsa-logo.png" alt="FreeTSA" />
+  </a>
+  <span aria-hidden="true">·</span>
+  <a href={revisionUrl}>Revision history</a>
+</div>
