@@ -8,15 +8,19 @@ node_modules/
 dist/
 .astro/
 
-# Private planning and technical platform research
+# Private operational material
 PLATFORM_OPTIONS.md
-works_in_progress/PLATFORM_OPTIONS.md
+PROJECT_LOG.md
+PUBLISHING_WORKFLOW.local.md
+**/sessions.md
+**/AGENTS.md
+The_Better_Lesson_LLM_Limits/README.md
+The_Better_Lesson_LLM_Limits/working/README.md
+The_Better_Lesson_Sutton_and_Its_Reception/manuscript/README.md
+The_Better_Lesson_Sutton_and_Its_Reception/working/README.md
 
 # Do not publish unrelated working formats or source archives by accident
 *.docx
 *.pdf
 *.zip
 *.sqlite*
-
-# Local reminder for the intentionally release-triggered evidence policy
-PUBLISHING_WORKFLOW.local.md

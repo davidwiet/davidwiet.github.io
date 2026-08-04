@@ -1,12 +1,21 @@
-# David Wiet — Works in Progress
+# AI Architecture — Works in Progress
 
-This repository is the public record and source archive for works deliberately released as drafts. The rendered reading site will be generated from this repository.
+This directory is both the authoring workspace and the Git-backed public source
+for AI Architecture. Git commits preserve ordinary versions; the Astro site
+renders each work's `current.md` as its reading edition.
 
-The files under `works_in_progress/` are the public materials. Private research notes, unrelated projects, source archives, and technical planning documents are intentionally excluded.
+See [INDEX.md](INDEX.md) for the work list and the relationship to the separate Human Image Project workspace.
 
-Each work contains:
+Each work owns:
 
-- `current.md` — the currently released text;
-- `sessions.md` — a concise record of the conversations and development context related to the work.
+- `current.md` — its current, explicitly provisional formulation;
+- optional `working/` material — durable argument maps, research summaries,
+  and other intellectual support that belongs in the public repository without
+  becoming a site page.
 
-Git commits record public versions of these files. They do not claim to prove the private moment at which an idea first occurred.
+The `.gitignore` file excludes session records, agent instructions, operational
+notes, generated files, and unrelated technical material. The work folders are
+intentionally independent: sharing a theme does not make them one article.
+
+The Human Image Project has its own workspace and its own public site section;
+it is not duplicated here.

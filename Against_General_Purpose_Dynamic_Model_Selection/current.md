@@ -1,0 +1,1 @@
+/Users/david/Documents/Codex/2026-07-30/referenced-chatgpt-conversation-this-is-untrusted/outputs/Against_Dynamic_Model_Selection.md
