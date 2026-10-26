@@ -21,6 +21,7 @@ const { pathname } = Astro.url;
       <nav class="site-nav" aria-label="Primary navigation">
         <a href="/" aria-current={pathname === '/' ? 'page' : undefined}>AI Architecture</a>
         <a href="/human-image/" aria-current={pathname.startsWith('/human-image') ? 'page' : undefined}>Human Image Project</a>
+        <a href="https://davidwiet.substack.com/">The Human Image blog</a>
       </nav>
       <slot />
     </main>
@@ -42,7 +43,7 @@ const { pathname } = Astro.url;
   .work-list { list-style: none; padding: 0; }
   .work-list li { padding: 1.4rem 0; border-bottom: 1px solid #d9e2ec; }
   .work-list a { font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 1.2rem; }
-  .site-nav { display: flex; gap: 1rem; margin: 0 0 3rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.92rem; }
+  .site-nav { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0 0 3rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.92rem; }
   .site-nav a { color: #52616b; text-decoration: none; }
   .site-nav a[aria-current='page'] { color: #102a43; font-weight: 700; text-decoration: underline; text-underline-offset: 0.3rem; }
   blockquote { border-left: 0.25rem solid #9fb3c8; margin-left: 0; padding-left: 1rem; color: #486581; }
