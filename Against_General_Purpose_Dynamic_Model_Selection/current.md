@@ -2,21 +2,15 @@
 
 ## Executive Summary
 
-A model-selection system predicts which model, reasoning level, or configuration will meet a task’s requirements at an acceptable cost. That is an empirical claim. It should be supported by comparative trials on representative work, evaluated by criteria that can distinguish the failures that matter. For runtime selection, the evidence must also connect an observed workflow state to the expected effect of a particular intervention.
+Model selection is a comparative empirical problem: which model, reasoning level, or configuration is most likely to meet a task’s requirements at an acceptable total cost? Learned routers and cascades have achieved useful cost–quality trade-offs on evaluated workloads. Those results do not establish reliable selection across heterogeneous, open-ended work.
 
-Current systems use capability rules, task categories, preference data, benchmark results, historical outcomes, uncertainty estimates, and prompt-based quality predictions. Learned routers and cascades have reduced cost while preserving measured quality on bounded evaluation sets. Commercial routers make similar predictions and expose cost-quality controls. These results establish that routing can work on defined, repeated workloads. They do not establish a general ability to select models for heterogeneous, open-ended work. Router performance depends on its supervision, definition of quality, task distribution, and candidate models; recent evaluations continue to find fragile decisions and strong simple baselines.
+The central obstacle is not a lack of routing mechanisms. It is the difficulty of predicting comparative outcomes when model capabilities, task requirements, and quality criteria vary. Information gathered during execution can improve a validated prediction, but a failed attempt alone does not identify the appropriate remedy.
 
-Broad generalization is difficult because models differ across knowledge, reasoning, instruction following, context use, specialization, tools, latency, and price. Tasks require different combinations of those capacities, while open-ended quality may involve accuracy, completeness, source integrity, constraint preservation, and user preference. A generic estimate of task difficulty cannot identify the decisive resource.
-
-Workflow integration supplies information that appears during execution, such as errors, retrieved evidence, and intermediate artifacts. It improves selection only when a validated rule relates those observations to comparative outcomes. Cascading introduces a further risk: a failed attempt establishes inadequacy, but not its cause. Retrieval, a different tool, clearer constraints, better decomposition, or human judgment may be more useful than a stronger model. Escalation can otherwise reinforce the original framing and return the same error with greater fluency and cost.
-
-General-purpose systems should therefore allocate models in advance under an explicit policy and reserve dynamic selection for workloads where representative evidence shows a net benefit after routing costs are counted. Verification should remain separate. It can establish that work failed without presuming which model or intervention should follow.
+For general-purpose systems without representative comparative evidence, this paper recommends explicit advance allocation rather than unsupported case-by-case optimization. That is a conservative operational default, not a finding that fixed allocation always performs better. Dynamic selection earns its place when it improves the full workflow against credible baselines. Verification should assess the result without automatically prescribing model escalation.
 
 ## The Question Is Empirical
 
-A model-selection system chooses which model, reasoning level, or configuration should handle a task. The choice may be made once, before execution, or revised as a workflow develops. Either way, the system makes a prediction: this allocation will produce a better result, or a sufficiently good result at lower cost, than the available alternatives.
-
-That prediction needs evidence.
+A model-selection system chooses which model, reasoning level, or configuration should handle a task. This paper distinguishes **request-time routing**, which selects from the incoming task, from **runtime selection**, which revises allocation using observations made during execution. A **cascade** is one runtime design: attempt, evaluate, then escalate if needed. Either form makes a prediction: this allocation will produce a better result, or a sufficiently good result at lower cost, than the available alternatives.
 
 For a defined class of tasks, the relevant question is:
 
@@ -34,17 +28,11 @@ The clearest evidence would come from repeated comparisons on representative tas
 
 The resulting policy would then need validation on later or held-out work. A router that memorizes the evaluation set has not learned how to allocate new tasks. A policy that works on mathematics may not transfer to legal interpretation, long-form synthesis, or code repair. Model updates, prompt changes, new tools, and altered workflows can make an earlier result stale.
 
-Evidence can be ordered by how directly it bears on the task:
+Evidence should be assessed by its validity, coverage, independence, and calibration. Tests, calculations, schemas, and citation checks offer externally checkable outcomes, but may miss important requirements. Expert judgments and production outcomes can cover qualities that automated checks omit, provided their rubric and sampling are appropriate. Learned predictors and similarity rules inherit the limitations of the outcomes on which they are trained.
 
-1. **Externally checkable outcomes.** Tests, calculations, schemas, verified citations, and other criteria that do not depend on the model’s own impression.
-2. **Stable human or production outcomes.** Expert ratings, acceptance decisions, correction rates, and other observations collected under a defined rubric.
-3. **Calibrated predictors trained on those outcomes.** A learned router may generalize beyond recorded cases if its predictions remain accurate on new ones.
-4. **Rules or similarity to evaluated cases.** These can be useful baselines when task classes are stable.
-5. **Uncalibrated judgment.** Verbal confidence, generic complexity scores, or an LLM’s opinion that a task needs a stronger model.
+Verbal confidence, generic complexity scores, and uncalibrated model judgments are hypotheses about performance, not substitutes for measuring it. No evidence type is automatically adequate: a passing test suite can be incomplete, and a preference label can reward presentation rather than correctness.
 
-The last category may still correlate with performance. The problem is that its reliability is unknown until it is tested against one of the stronger forms of evidence.
-
-Runtime selection requires an additional kind of evidence. Suppose a workflow observes a test failure, a missing citation, or a stalled plan. To justify changing models, it needs to know that the proposed model performs better from that state. The failure establishes that the present attempt is inadequate. It does not establish which intervention will help.
+For runtime selection, comparisons must also cover the states in which intervention is proposed. An evaluation of first attempts does not by itself validate a policy for recovering from failed attempts.
 
 ## What Current Systems Use
 
@@ -60,7 +48,7 @@ These rules are limited, but inspectable. Their claims are modest: this model ha
 
 Learned routers predict comparative performance from the prompt or a representation of it. RouteLLM, for example, trains routers on preference data showing when a stronger model’s response is preferred to a weaker one. Its published evaluation reported substantial cost reductions on the tested benchmarks while preserving the strong model’s measured quality. The paper also reported transfer when the candidate models changed. Those are meaningful results, but they concern the benchmarks, model pairs, preference data, and evaluation procedure used in the study. [RouteLLM](https://arxiv.org/abs/2406.18665)
 
-Other work trains on answer correctness, uncertainty, or large collections of recorded model outcomes. RouterEval assembled more than 200 million performance records across twelve evaluations and thousands of models, illustrating how much comparative data a serious routing problem can require. Its authors also found considerable room for improvement in existing methods. [RouterEval](https://arxiv.org/abs/2503.10657)
+Other work trains on answer correctness, uncertainty, or large collections of recorded model outcomes. RouterEval assembled more than 200 million performance records across twelve evaluations and thousands of models, providing a large-scale resource for comparative evaluation. Its authors also found considerable room for improvement in existing methods. [RouterEval](https://arxiv.org/abs/2503.10657)
 
 The sophistication of the predictor is not itself evidence of better allocation. A 2025 study found that a well-tuned nearest-neighbour method could match or outperform more complex routers across its evaluation suite. Historical similarity may be enough when model performance is locally consistent, and it is easier to inspect. [When Simple kNN Beats Complex Learned Routers](https://arxiv.org/abs/2505.12601)
 
@@ -68,7 +56,7 @@ The sophistication of the predictor is not itself evidence of better allocation.
 
 Amazon Bedrock predicts the response quality of two models from the same family and routes according to a configured quality-difference threshold. The service exposes the selected model and lets the operator choose the trade-off. Amazon also states that the router cannot adapt its decisions from application-specific performance data, may not be optimal for specialized uses, and depends on its initial training data. It recommends evaluating the router on the intended application before production use. [Amazon Bedrock Intelligent Prompt Routing](https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html)
 
-OpenRouter’s Auto Router chooses among a curated pool after analyzing the prompt. It exposes the chosen model and a cost-quality control. It pins a model within a session to preserve consistency and cache use, limiting rerouting during a conversation. Its public documentation describes the factors considered, but does not provide enough evaluation detail to infer reliability for a particular user’s open-ended workload. [OpenRouter Auto Router](https://openrouter.ai/docs/guides/routing/routers/auto-router)
+OpenRouter’s current Auto Router classifies the task and ranks eligible models using recent community spending for that task type, subject to capability filters and a selected cost tier. It exposes the chosen model. Session stickiness prefers the previous model while it remains a leading candidate, rather than guaranteeing that a conversation stays on one model. These are documented routing signals and controls, not direct evidence of comparative quality for a particular user’s workload. [OpenRouter Auto Router](https://openrouter.ai/docs/guides/routing/routers/auto-router)
 
 These systems show that general prompt routing is available as a product. Product availability is different from general validation. The operator still has to decide whether the router’s quality prediction corresponds to the outcomes that matter in the application.
 
@@ -76,7 +64,7 @@ These systems show that general prompt routing is available as a product. Produc
 
 A cascade tries one model, evaluates its output, and calls another model when a threshold is not met. FrugalGPT demonstrated large cost reductions on its evaluated datasets by learning combinations of models and escalation rules. This is good evidence for cascades on workloads resembling those tests. [FrugalGPT](https://arxiv.org/abs/2305.05176)
 
-A cascade answers a narrower economic question than a general router. If the first call is cheap, failure is detectable, and the second model reliably performs better on those failures, the expected cost can fall. None of those conditions should be assumed outside the evaluated workload.
+A cascade can lower expected cost when the initial call is cheap, its acceptance rule reliably distinguishes adequate outputs, and escalation improves rejected cases enough to repay the additional work. False acceptance and unnecessary escalation must both be counted.
 
 ## What Has Been Established
 
@@ -90,15 +78,19 @@ Third, the success is conditional. The router inherits the definition of quality
 
 Recent evaluations make the limitation concrete. A study of preference-based and commercial routers found efficiency gains alongside fragile, category-driven behavior. One router sent all coding and mathematics prompts to the most powerful model even when smaller models were adequate, while weaker routing on jailbreak prompts introduced safety concerns. [How Robust Are Router-LLMs?](https://arxiv.org/abs/2504.07113)
 
-The field is building larger benchmarks, calibrated uncertainty methods, and techniques for correcting biased preference supervision. Reliable supervision and generalization remain open problems.
+Newer evidence reinforces the importance of baselines without settling the general question. LLMRouterBench, published in Findings of ACL 2026 and covering more than 400,000 instances, 21 datasets, and 33 models, found model complementarity but also found that several routing approaches did not reliably outperform a simple baseline. Complementarity creates an opportunity; it does not show that a deployable selector can capture it. [LLMRouterBench](https://aclanthology.org/2026.findings-acl.1881/)
 
-Current evidence therefore supports dynamic selection for a defined distribution, not a general faculty that can inspect any task and determine the correct amount or kind of intelligence to apply.
+An October 2026 preprint evaluated six commercial routers across fourteen settings and eight task categories. None outperformed random selection between two carefully chosen models at matched cost. This is evidence against the tested routing selections on that benchmark, not against every possible router: the study used English, single-turn tasks and one sampled outcome per query–model pair. Its strongest practical implication is to test roster selection and cost-matched random mixtures before crediting prompt-specific routing. [Dynamic LLM Routers are Often Misguided](https://arxiv.org/html/2610.02762v1)
+
+Positive evidence also extends beyond single-turn routing. An August 2026 preprint reported that six of seven learned routers exceeded an always-largest-model baseline on average across five tested multi-agent topologies. One of these, EloRouter, uses a query-independent ranking, so beating the always-largest baseline does not isolate the value of dynamic decisions. It remains evidence about those tasks, model pools, metrics, and baselines; a separate personalization experiment in the study found that an automated persona-based preference ranking differed from a small human evaluation. The result strengthens the case for testing integrated policies while illustrating the dependence on how quality is measured. [LLMRouter](https://arxiv.org/html/2608.06867v1)
+
+Taken together, these studies support conditional benefits and serious baseline sensitivity. They do not establish a general faculty for inspecting arbitrary work and determining the right allocation.
 
 ## Why Generalization Is Difficult
 
-Model capability is multidimensional. Models differ in learned knowledge, reasoning behavior, instruction following, context use, domain specialization, tool use, calibration, latency, and price. A reasoning-effort control changes part of that configuration; it does not supply missing knowledge or grant access to a tool.
+Model capability is multidimensional. Models differ in learned knowledge, reasoning behavior, instruction following, context use, domain specialization, tool use, calibration, latency, and price. A reasoning-effort control changes part of that configuration; it does not by itself supply external evidence or grant access to a tool.
 
-Tasks also demand different combinations of those capacities. A short factual question may depend on an obscure source. A long transformation may require little reasoning but strict constraint preservation. A coding failure may come from an unavailable API rather than weak planning. Prompt length and apparent complexity reveal little about the decisive resource.
+Tasks also demand different combinations of those capacities. A short factual question may depend on an obscure source. A long transformation may require little reasoning but strict constraint preservation. A coding failure may come from an unavailable API rather than weak planning. Prompt length and apparent complexity alone do not identify the decisive resource.
 
 Open-ended quality is equally difficult to reduce to one score. A polished answer may be factually wrong. A concise answer may omit the one qualification that changes the decision. A stronger model may improve conceptual discrimination while changing style in a way the user dislikes. The utility policy can combine these concerns, but the evidence must still measure them.
 
@@ -108,17 +100,9 @@ These complications do not prove that general routing is impossible. They raise 
 
 ## Workflow Integration Adds Information, Not Validity
 
-Some allocation decisions use only information available before execution. Others depend on intermediate artifacts, tool results, errors, or progress. This is often presented as a separate solution: an integrated agent can watch the task and adapt.
+Workflow integration makes intermediate artifacts, tool results, errors, and progress available as routing features. That can make runtime selection more informative than request-time routing. It does not eliminate the need to test whether those features predict the relative benefit of the available interventions.
 
-A coding workflow may observe that a patch failed the tests three times. A research workflow may find that the available sources do not support a claim. Those observations can become useful routing features if comparative data show that a particular model or reasoning level performs better under those conditions. Without that link, the workflow has only described the problem more precisely.
-
-Workflow-integrated selection is therefore a subtype of system judgment. It can improve the timing and resolution of a validated allocation method. It cannot create the validation.
-
-This establishes the proper order of development:
-
-1. show that an allocation rule predicts comparative outcomes;
-2. determine which inputs the rule needs;
-3. integrate it when some of those inputs arise only during execution.
+The development task is to define the observed state, compare actions from that state, and validate the resulting policy on new cases. Where the choice itself changes later observations, evaluate the complete policy as well as its component predictions. A locally useful switch need not improve end-to-end quality, latency, or cost.
 
 ## Cascading and the Causal Error
 
@@ -132,40 +116,27 @@ If evidence is missing, a stronger model can produce a better-defended hallucina
 
 An intelligent recovery policy would compare interventions from the observed state. It would ask whether retrieval, reframing, another tool, more context, a specialized model, or additional inference compute has the best expected effect. A cascade usually considers a much smaller menu: accept the cheap answer or apply more model.
 
-Success after escalation does not prove that escalation was necessary. The stronger model may have helped, but the original model might also have succeeded on another sample. A prompt repair or retrieval call may have worked better. Without the counterfactual, the system can record correlation and mistake it for diagnosis.
+Success after escalation does not prove that escalation was necessary. The stronger model may have helped, but the original model might also have succeeded on another sample. A prompt repair or retrieval call may have worked better. An observed success alone cannot distinguish these explanations. Representative randomized trials, controlled replays, or appropriately controlled offline evaluations with adequate action coverage can estimate comparative effects; every incident need not have every alternative rerun.
 
-This creates a compute bias. The architecture is built to allocate models, so model power becomes its default remedy. Over time, successful retries can reinforce the policy even when their success came from stochastic variation.
+This can create a compute bias: when the architecture considers only model upgrades, non-model remedies are excluded before their value is tested. A controlled comparison should therefore include retrying the same model and plausible changes to information, tools, or task framing—not just escalating versus stopping.
 
 ## The Full Cost
 
-Routing adds classification, model or embedding calls, policy maintenance, logging, and context transfer. Cascades may repeat generation and increase latency. Long conversations can lose cache efficiency or behavioral consistency when models change.
+Routing can add classification, model or embedding calls, policy maintenance, logging, and context transfer. Cascades may repeat generation and increase latency. Long conversations can lose cache efficiency or behavioral consistency when models change.
 
-These costs may be small in a high-volume application. They are still predictable. The benefit depends on the router choosing well often enough to repay them.
+These costs are workload-dependent, not necessarily large. Measure the complete process: routing overhead, accepted failures, recovery work, output quality, and average and tail latency as well as the selected model’s price. Report trade-offs rather than hiding them in a single score when stakeholders value them differently.
 
-The hidden costs are harder to count:
-
-- repeated commitment to the original framing;
-- more fluent restatement of unsupported claims;
-- neglect of non-model remedies;
-- greater authority attached to an expensive answer;
-- misleading attribution when a retry succeeds;
-- operational data that reward escalation without testing alternatives.
-
-A router should therefore be compared with fixed allocation and simple rules after the whole process is counted. If a nearest-neighbour lookup or stable task policy performs as well, the dynamic system has not earned its complexity.
+Compare the router with fixed-model allocation, capability rules, task-class policies, and appropriate similarity-based methods under the same quality target or resource budget. The relevant question is whether the added mechanism improves an attainable operating point, not whether it beats an arbitrarily weak default.
 
 ## Verification Is a Different Architecture
 
-Verification determines whether a result meets its criteria. Model allocation chooses the resource that attempts the task. Recovery chooses what to change after a failure.
+Verification determines whether a result meets its criteria. Allocation chooses the resource that attempts the task. Recovery chooses what to change after a failure. These functions can cooperate without being collapsed into one decision.
 
-A test suite may identify a broken program with high confidence. It does not follow that another model is the best repair method. A citation audit may expose an unsupported claim without showing that more inference compute will find a source. A human reviewer may identify a conceptual error without diagnosing insufficient model capacity.
-
-Verification can guide recovery. Its result may support another model when comparative evidence warrants that choice. It may instead call for retrieval, correction, reframing, or stopping.
-
-Keeping the functions separate preserves the value of verification without turning every detected problem into an escalation trigger.
+A verifier should expose what failed and the strength of that assessment. A recovery policy can then use that evidence to choose another model, obtain information, change tools, correct the approach, or stop. Keeping the decisions distinct preserves useful failure detection even where the best remedy remains uncertain.
 
 ## A Defensible Policy
 
-General-purpose systems should allocate models in advance under an explicit policy. The policy can use known capability requirements, available evaluations, cost constraints, and the user’s tolerance for risk. It should be revised when better comparative evidence appears.
+Where comparative evidence is insufficient, general-purpose systems should use an explicit advance allocation policy based on capability requirements, available evaluations, cost constraints, and the user’s tolerance for risk. This recommendation favors an inspectable baseline over an unvalidated optimizer; it does not establish superior quality or lower cost. The baseline itself needs evaluation and revision.
 
 Dynamic selection is justified where:
 
@@ -178,26 +149,25 @@ Dynamic selection is justified where:
 
 The user should retain an override because cost, latency, reproducibility, and risk are partly matters of preference.
 
-Fixed allocation is not a claim that one model fits every task. Different task classes can receive different advance policies. The point is to avoid pretending that unsupported case-by-case prediction becomes reliable because it is automatic.
+A fixed policy is not necessarily a fixed model: different task classes can receive different allocations, and a learned router can itself remain fixed after training. The distinction here is between justified allocation rules and unsupported case-by-case predictions, not between all automation and manual choice.
 
 The same standard should govern future improvements. A new router, confidence score, or agent monitor should be tested against fixed models, simple rules, and similarity-based baselines. It should be revalidated after material changes to the models or workflow.
 
 ## Conclusion
 
-Model selection is a comparative empirical problem. A router needs evidence that its chosen allocation is more likely than the alternatives to meet a defined standard at an acceptable cost.
+The case against general-purpose dynamic model selection is a case against an unearned inference: success on evaluated workloads does not establish reliable allocation across arbitrary work. Bounded routing successes remain valuable, and broader success is an empirical possibility rather than something ruled out in principle.
 
-Current research shows that such evidence can support useful routing on bounded, measurable workloads. It does not establish a general ability to allocate models across heterogeneous, open-ended work. Multidimensional model differences and unstable definitions of quality make broad transfer difficult.
-
-Workflow integration can provide evidence that appears during execution, but it cannot validate the rule applied to that evidence. Cascading adds a further risk by treating failure as a reason to apply more model power without establishing that model power is the missing resource.
-
-The prudent default is advance allocation under a stable policy, with dynamic selection reserved for cases where representative comparative evidence shows a net benefit. Verification should test the work. It should not decide the remedy by default.
+Use explicit allocation as the baseline, test dynamic policies against credible alternatives, and separate detection of failure from choice of remedy. The mechanism should follow the evidence—not stand in for it.
 
 ## References
 
+- Amazon Web Services. “[Understanding Intelligent Prompt Routing in Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html).”
 - Chen, Lingjiao, Matei Zaharia, and James Zou. “[FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance](https://arxiv.org/abs/2305.05176).” 2023.
+- Feng, Tao, et al. “[LLMRouter: Unified Infrastructure for Developing, Evaluating, and Deploying LLM Routers](https://arxiv.org/abs/2608.06867).” 2026. Preprint.
 - Huang, Zhongzhan, et al. “[RouterEval: A Comprehensive Benchmark for Routing LLMs to Explore Model-level Scaling Up in LLMs](https://arxiv.org/abs/2503.10657).” 2025.
 - Kassem, Aly M., Bernhard Schölkopf, and Zhijing Jin. “[How Robust Are Router-LLMs? Analysis of the Fragility of LLM Routing Capabilities](https://arxiv.org/abs/2504.07113).” 2025.
+- Li, Hao, et al. “[LLMRouterBench: A Massive Benchmark and Unified Framework for LLM Routing](https://aclanthology.org/2026.findings-acl.1881/).” Findings of ACL, 2026.
 - Li, Yang. “[Rethinking Predictive Modeling for LLM Routing: When Simple kNN Beats Complex Learned Routers](https://arxiv.org/abs/2505.12601).” 2025.
 - Ong, Isaac, et al. “[RouteLLM: Learning to Route LLMs with Preference Data](https://arxiv.org/abs/2406.18665).” 2024.
-- Amazon Web Services. “[Understanding Intelligent Prompt Routing in Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html).”
 - OpenRouter. “[Auto Router](https://openrouter.ai/docs/guides/routing/routers/auto-router).”
+- Wang, Sam, et al. “[Dynamic LLM Routers are Often Misguided](https://arxiv.org/abs/2610.02762).” 2026. Preprint.
