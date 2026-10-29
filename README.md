@@ -19,3 +19,7 @@ intentionally independent: sharing a theme does not make them one article.
 
 The Human Image Project has its own workspace and its own public site section;
 it is not duplicated here.
+
+The [Human Image blog archive](https://davidwiet.github.io/blog/) mirrors public
+Substack articles while Substack remains their editorial source. See
+[the mirror workflow](docs/blog-mirror.md) for refresh, verification and recovery.

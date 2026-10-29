@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import archive from '../../../content/blog/posts.json';
+---
+
+<BaseLayout title="The Human Image — David Wietchner" description="Essays on AI, philosophy, and theology by David Wietchner. Public articles mirrored from The Human Image on Substack.">
+  <p class="eyebrow">THE HUMAN IMAGE</p>
+  <h1>Essays on AI, philosophy, and theology</h1>
+  <p>By David Wietchner. Read the essays here, or <a href="https://davidwiet.substack.com/">subscribe on Substack</a>.</p>
+  <ul class="work-list">
+    {archive.posts.map((post) => (
+      <li>
+        <a href={`/blog/${post.mirror_slug}/`}>{post.title}</a>
+        <p>{post.description}</p>
+        <time datetime={post.published_at}>{post.published_at.slice(0, 10)}</time>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>

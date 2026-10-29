@@ -2,9 +2,10 @@
 interface Props {
   title?: string;
   description?: string;
+  canonical?: string;
 }
 
-const { title = 'AI Architecture', description = 'Public drafts and working papers by David Wietchner.' } = Astro.props;
+const { title = 'AI Architecture', description = 'Public drafts and working papers by David Wietchner.', canonical = new URL(Astro.url.pathname, Astro.site).href } = Astro.props;
 const { pathname } = Astro.url;
 ---
 
@@ -14,6 +15,7 @@ const { pathname } = Astro.url;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
     <title>{title}</title>
   </head>
   <body>
@@ -21,6 +23,7 @@ const { pathname } = Astro.url;
       <nav class="site-nav" aria-label="Primary navigation">
         <a href="/" aria-current={pathname === '/' ? 'page' : undefined}>AI Architecture</a>
         <a href="/human-image/" aria-current={pathname.startsWith('/human-image') ? 'page' : undefined}>Human Image Project</a>
+        <a href="/blog/" aria-current={pathname.startsWith('/blog/') ? 'page' : undefined}>Blog archive</a>
         <a href="https://davidwiet.substack.com/">The Human Image blog</a>
       </nav>
       <slot />
