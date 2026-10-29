@@ -128,6 +128,18 @@ class MirrorTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 m.sync(Path(tmp) / 'posts.json', Source([post()]), request=request)
 
+    def test_offline_snapshot_rejects_tampered_content_identity_and_duplicates(self):
+        valid = m.collect(Source([post()]))
+        self.assertEqual(m.validate_snapshot(valid), valid)
+        for field, value in [('body_html', '<p>Tampered</p>'), ('source_url', 'https://wrong.example/p/x'),
+                             ('published_at', '2999-01-01T00:00:00Z')]:
+            snapshot = json.loads(json.dumps(valid)); snapshot['posts'][0][field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                m.validate_snapshot(snapshot)
+        valid['posts'].append(dict(valid['posts'][0]))
+        with self.assertRaises(ValueError):
+            m.validate_snapshot(valid)
+
 
 if __name__ == '__main__':
     unittest.main()

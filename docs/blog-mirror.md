@@ -39,55 +39,58 @@ and no attempt to retrieve drafts, subscriber records or private/paid content.
 ## Running and verification
 
 The existing **Deploy to GitHub Pages** workflow runs on pushes and manual dispatch.
-There is no schedule or polling. Its mirror job alone uses the repository's ephemeral
-`GITHUB_TOKEN` with `contents: write`; build/deploy retain existing permissions.
-It commits only `content/blog/posts.json`. Build checks out the resulting commit
-and deploys in the same workflow: a bot-token push does not itself trigger Pages.
-No GitHub account or repository security setting changes are required.
+There is no schedule or polling. The publishing executor acquires and verifies the
+public source, then commits `content/blog/posts.json` through the existing GitHub
+connector. GitHub validates that supplied snapshot, builds and deploys the exact
+triggering commit. It uses only the existing read/Pages permissions; no write token,
+new account, secret or repository security-setting change is required.
 
-After verified publication or a significant public edit, the existing publishing
-agent commits `content/blog/refresh-request.json` through its existing GitHub
-connector. This push starts the same workflow. The request file is the most recent
-public refresh trigger, not a queue, scheduler or separate store. The source adapter
-always uses the fixed publication URL; request content cannot select another source
-or execute commands. Significant edits include public prose/title, source links,
-intentional images/credits and canonical URL changes; draft work and cosmetic saves
-do not qualify. Preserve the agent's current Shabbat and publication safeguards.
+The live GitHub test on 29 October 2026 demonstrated that its hosted runner could
+not fetch Substack (curl HTTP failure, run 40949581307). The same complete public
+source fetch succeeded on David's Mac. Acquisition therefore belongs to the
+existing source-accessing publishing executor, immediately after verified native
+publication or a significant live edit. The CI runner never substitutes drafts or
+silently treats a stale saved snapshot as a fresh source read.
 
-The connector exposes GitHub file commits, but not workflow dispatch. Use its
-`fetch_file` and `update_file` with the fresh blob SHA; use `create_file` only when
-the path is confirmed absent. Use branch `main`, repository
-`davidwiet/davidwiet.github.io`, and commit message `Refresh blog mirror: <title>`.
-Read the existing request before retrying an uncertain write. Reuse the same
-`request_id` for the same publication/edit; do not duplicate a completed request.
+Significant edits include public prose/title, source links, intentional images and
+credits, or canonical URL changes. Draft work and cosmetic saves do not qualify.
+The publisher uses a current checkout of this repository; preserve the existing
+snapshot before refreshing so native post IDs retain their established mirror URLs.
+For example, after confirming the actual post ID and current canonical live URL:
 
-```json
-{
-  "schema_version": 1,
-  "request_id": "post-222456624-published-revision-identifier",
-  "reason": "significant-edit",
-  "post_id": 222456624,
-  "source_url": "https://davidwiet.substack.com/p/choosing-ai-models",
-  "expected_body_sha256": null
-}
+```sh
+python3 scripts/mirror_blog.py --event-id post-222456624-revision-identifier \
+  --reason significant-edit --post-id 222456624 \
+  --source-url https://davidwiet.substack.com/p/choosing-ai-models
 ```
 
-`reason` is `publication`, `significant-edit`, or the one-time `initial-backfill`.
-When exact current public `body_html` is available, put its SHA-256 in
-`expected_body_sha256`; otherwise use null and require complete current-public-text
-comparison in the receipt. Never hash local draft prose as a published revision.
-The job refuses to complete if the requested public post/URL or expected HTML
-revision is absent. It records the processed request in the verified snapshot.
+Use `publication` for a new public article or `initial-backfill` for the one-time
+initial copy. Reuse the same event ID when recovering the same operation. When
+exact current public HTML was independently captured, optionally supply its hash
+with `--expected-body-sha256`; never hash a local draft as a published revision.
+The collector verifies the complete public archive and every article before
+writing atomically. It refuses a missing post/URL or a stale expected revision.
 
-Verify the actual run at the repository's Actions runs, then read
-`https://davidwiet.github.io/blog/mirror-status.json`: its `processed_request.request_id`
-must equal the request, and its post hash must match the verified source snapshot.
-Check the actual article URL, full text, links and image rendering. A successful
-request commit alone is not mirror completion. Record the request, commit/run,
-live URL, source hash and outcome in the existing publication receipt. On failure
-keep the public article intact, retain the blocker and recover this same request;
-never republish/resend it or add a timer. Native **Run workflow** remains available
-for an explicitly requested recovery.
+Commit only the resulting `content/blog/posts.json` through GitHub's `fetch_file`
+and `update_file` tools using the fresh blob SHA, branch `main`, repository
+`davidwiet/davidwiet.github.io`, and message `Mirror blog: <title>`. Use `create_file`
+only for a confirmed missing snapshot. The connector's public snapshot commit
+triggers the existing Pages workflow; no workflow-dispatch tool or trigger file is
+needed. Inspect existing remote content before retrying an uncertain write. A
+cloud manager unable to fetch Substack must obtain the verified snapshot from the
+current publishing executor via its existing handoff. If that route is unavailable,
+report the exact source/dispatch blocker; do not claim automatic coverage.
+
+Verify Actions success, then read
+`https://davidwiet.github.io/blog/mirror-status.json`: its
+`processed_request.request_id` must equal the event ID and its post hash must match
+the newly verified snapshot. Check the actual article's full text, links and images.
+A successful snapshot commit alone is not mirror completion. Record event ID,
+commit/run, live URL, source hash and outcome in the existing publication receipt.
+On failure preserve the Substack publication and recover this same operation;
+never republish/resend it or add a timer. Preserve existing Shabbat and single-writer
+safeguards. Native **Run workflow** remains available for explicit recovery of an
+already committed verified snapshot.
 
 ```sh
 python3 -m unittest discover -s tests -v

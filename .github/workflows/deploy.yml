@@ -15,44 +15,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  mirror:
+  validate:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      sha: ${{ steps.snapshot.outputs.sha }}
-      changed: ${{ steps.snapshot.outputs.changed }}
     steps:
       - name: Checkout current publication branch
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
       - name: Test public-only mirror contract
         run: python3 -m unittest discover -s tests -v
-      - name: Refresh published blog archive
-        run: python3 scripts/mirror_blog.py
-      - name: Save verified public snapshot
-        id: snapshot
-        run: |
-          git add -- content/blog/posts.json
-          if git diff --cached --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'Mirror published Substack articles'
-            git push origin HEAD:main
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Verify supplied public snapshot
+        run: python3 scripts/mirror_blog.py --verify-snapshot
   build:
     runs-on: ubuntu-latest
-    needs: mirror
+    needs: validate
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.mirror.outputs.sha }}
+          ref: ${{ github.sha }}
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

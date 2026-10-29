@@ -86,6 +86,30 @@ def digest(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def validate_snapshot(snapshot):
+    if (snapshot.get("schema_version") != 1 or snapshot.get("publication_id") != PUBLICATION_ID
+            or snapshot.get("source") != SOURCE or not isinstance(snapshot.get("posts"), list)):
+        raise ValueError("Unexpected published snapshot identity/schema")
+    ids, slugs = set(), set()
+    for post in snapshot["posts"]:
+        if (type(post.get("id")) is not int or post["id"] in ids or
+                not SLUG.fullmatch(post.get("mirror_slug", "")) or
+                post["mirror_slug"] in slugs or
+                not SLUG.fullmatch(post.get("source_slug", "")) or
+                post.get("source_url") != f"{SOURCE}/p/{post['source_slug']}" or
+                not post.get("title")):
+            raise ValueError("Invalid/duplicate public post identity or URL")
+        ids.add(post["id"]); slugs.add(post["mirror_slug"])
+        if datetime.fromisoformat(post["published_at"].replace("Z", "+00:00")) > datetime.now(timezone.utc):
+            raise ValueError("Future-dated snapshot")
+        body = post.get("body_html", "")
+        check = BodyCheck(); check.feed(body)
+        if (not "".join(check.text).strip() or digest(body) != post.get("body_sha256") or
+                digest("".join(check.text)) != post.get("text_sha256")):
+            raise ValueError("Public snapshot content/hash verification failed")
+    return snapshot
+
+
 def archive(get):
     posts = []
     seen = set()
@@ -190,6 +214,7 @@ def sync(destination, get=fetch, check=False, request=None):
             raise ValueError("Requested public revision is not yet visible; refusing stale completion")
         current["processed_request"] = {k: request[k] for k in
                                         ["request_id", "reason", "post_id", "source_url"]}
+    validate_snapshot(current)
     encoded = json.dumps(current, ensure_ascii=False, indent=2) + "\n"
     changed = not destination.exists() or destination.read_text() != encoded
     if changed and not check:
@@ -205,7 +230,22 @@ if __name__ == "__main__":
     args = argparse.ArgumentParser(description=__doc__)
     args.add_argument("--check", action="store_true", help="Validate live content; do not write")
     args.add_argument("--destination", type=Path, default=ROOT / "content/blog/posts.json")
-    args.add_argument("--request", type=Path, default=ROOT / "content/blog/refresh-request.json")
+    args.add_argument("--verify-snapshot", action="store_true", help="Validate saved snapshot offline; do not fetch or write")
+    args.add_argument("--event-id")
+    args.add_argument("--reason", choices=["initial-backfill", "publication", "significant-edit"])
+    args.add_argument("--post-id", type=int)
+    args.add_argument("--source-url")
+    args.add_argument("--expected-body-sha256")
     options = args.parse_args()
-    request = json.loads(options.request.read_text()) if options.request.exists() else None
-    sync(options.destination, check=options.check, request=request)
+    if options.verify_snapshot:
+        validate_snapshot(json.loads(options.destination.read_text()))
+        print("Saved public snapshot identity, safe HTML and complete hashes verified")
+    else:
+        request = None
+        if any([options.event_id, options.reason, options.post_id, options.source_url]):
+            if not all([options.event_id, options.reason, options.post_id, options.source_url]):
+                args.error("event-id, reason, post-id and source-url must be supplied together")
+            request = dict(schema_version=1, request_id=options.event_id, reason=options.reason,
+                           post_id=options.post_id, source_url=options.source_url,
+                           expected_body_sha256=options.expected_body_sha256)
+        sync(options.destination, check=options.check, request=request)
